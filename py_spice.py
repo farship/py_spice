@@ -17,7 +17,6 @@ Uncomment the import and change main(argv) call to be profile.run('main(argv)');
 # import cProfile as profile # used for finding slow/unoptimised functions
 from sys import argv # Take in the arguments from the command line, for the file names.
 import numpy as np # Arrays and matrix calculations optimised with C and pre-compiled functions.
-
 """
 The main function is used for calling all functions in the order required.
 Try...Execept are used for error handling.
@@ -129,7 +128,7 @@ def extractBlock(file, pre, post):
     print("Extracting {}...".format(pre[1:-1])) # removes the '<' and '>' characters
     return (file.split(pre)[1]).split(post)[0] 
 """ By returning the result of the extraction directly, 
-    the interpreter can optimise the excecution better 
+    the interpreter can optimise the execution better 
     and not need to assign it to a temporary variable.
 """
 
@@ -187,7 +186,7 @@ def sortR(circuit):
         position = int(elem.split('n1=')[1].split(' ',1)[0]) # Gets the value of n1
         output = int(elem.split('n2=')[1].split(' ',1)[0]) # Gets the value of n2
         resistance = str(elem.split(' ')[-1]) # Gets the value of component
-        elements.append(list((position,output,resistance))) # Makes a list of tuples, ordered & unchangable
+        elements.append(list((position,output,resistance))) # Makes a list(ordered & changeable) of tuples(ordered & unchangeable)
     elements.sort() # Sorts by the input node connection, position
     return elements
 
@@ -225,7 +224,7 @@ def convertImpedances(blockRef, currentFreq): # could do the calculations in 2 1
     In testing, there was an issue of the list filling with identical information
     The implementation fixed the issue, though the method did work sometimes
     Maybe a change in environment/interpreter caused this
-    The other method is included here for interested individuals
+    The problem method is included here for interested individuals
     -------------------------------------------------
     newLine = line.split(x)[0] + "R=" + str(z)
     block[count][0:1] = blockRef[count][0:1] 
@@ -306,6 +305,9 @@ def calculateOutputs(probes = list(), circCond = dict(), matrix = list()):
         else:
             Zs = 1 / circCond["GS"]
 
+
+        
+
         potentialValues["Zin"] = complex(((Ac*Zl) + Bc) / ((Cc*Zl)+Dc))
         potentialValues["Zout"] = complex(((Dc*Zs) + Bc) / ((Cc*Zs)+Ac))
 
@@ -382,16 +384,25 @@ def writeOutputFile(vars = dict(), vAndUnits = list(), freqs = list(), filename 
         valueStr += " {j:.3e},". format(j = freqs[fcount]) # sets floats to be in scientific notation with 4 significant figures, then converts to a string
         for var in vars:
             freqVals = vars[var][fcount]
-            if (np.real(freqVals) >= 0): # maintain the width of the columns with this spacing, accounts for negative sign
-                polarity = "  "
+            realPart = np.real(freqVals)
+            imagPart = np.imag(freqVals)
+
+            if (realPart > 0): # maintain the width of the columns with this spacing, accounts for negative sign. math.copysign is needed due to -0.00 is seen as 0.00 so formatting messes up
+                polarity = "  " # spacing used for having no sign
+            elif (realPart < 0): # if negative and not -0.00
+                polarity = ' ' # spacing for having the negative sign
             else:
-                polarity = ' '
-            valueStr += "{spaces}{var:.3e},".format(spaces=polarity, var=np.real(freqVals))
-            if (np.imag(freqVals) >= 0):
                 polarity = "  "
-            else:
+                realPart = +0.00
+            valueStr += "{spaces}{var:.3e},".format(spaces=polarity, var=realPart)
+            if (imagPart > 0):
+                polarity = "  "
+            elif imagPart < 0:
                 polarity = ' '
-            valueStr += "{spaces}{var:.3e},".format(spaces=polarity, var=np.imag(freqVals))
+            else:
+                polarity = "  "
+                imagPart = +0.00
+            valueStr += "{spaces}{var:.3e},".format(spaces=polarity, var=imagPart)
         valueStr += '\n'
     
     print("Writing to file...") # So it is known if the program crashes before the writing or during
@@ -401,8 +412,7 @@ def writeOutputFile(vars = dict(), vAndUnits = list(), freqs = list(), filename 
     return filename
 
 
-# Good practice to show that this is the 'main' file, 
-#   where C would search for the starting function called 'main'
-if __name__ == "__main__": # Run main function
+# Only runs the main function if this is excecuted file, deosn't if this is imported
+if __name__ == "__main__": # Run main function when file is run directly
     main(argv)
     # profile.run('main(argv)')
